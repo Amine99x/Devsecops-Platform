@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-config
+  namespace: platform
+data:
+  AUTH_URL: "http://auth-service.platform.svc.cluster.local:3001"
+  BACKEND_URL: "http://backend-service.platform.svc.cluster.local:3002"

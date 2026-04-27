@@ -1,0 +1,8 @@
+driver:
+  kind: ebpf
+falcosidekick:
+  enabled: true
+  config:
+    alertmanager:
+      hostport: "http://monitoring-kube-prometheus-alertmanager.monitoring.svc.cluster.local:9093"
+      endpoint: "/api/v2/alerts"
