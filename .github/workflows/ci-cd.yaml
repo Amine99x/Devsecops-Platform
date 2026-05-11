@@ -113,7 +113,7 @@ jobs:
             cosign attest --yes \
               --key cosign.key \
               --predicate "reports/sbom/mon-$svc.spdx.json" \
-              --type spdx \
+              --type spdxjson \
               --registry-username "$HARBOR_USERNAME" \
               --registry-password "$HARBOR_PASSWORD" \
               --allow-insecure-registry \
