@@ -83,7 +83,13 @@ jobs:
             docker build -t "$IMAGE" "./app/$svc"
 
             echo "2) Trivy scan"
-            trivy image --no-progress --exit-code 1 --severity HIGH,CRITICAL "$IMAGE"
+            mkdir -p .trivycache
+            trivy image \
+            --cache-dir .trivycache \
+            --no-progress \
+            --exit-code 1 \
+            --severity HIGH,CRITICAL \
+            "$IMAGE"
 
             echo "3) Push image to Harbor"
             docker push "$IMAGE"
