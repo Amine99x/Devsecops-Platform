@@ -19,3 +19,5 @@ reports/
 *.tmp
 *.log
 cosign.pub
+cosign.key.b64
+actions-runner/
