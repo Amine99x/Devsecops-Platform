@@ -1,7 +1,13 @@
-FROM node:18-alpine
+# ==================== BUILD STAGE ====================
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY index.js .
 RUN npm init -y && npm install express && chown -R 1000:1000 /app
+
+# ==================== RUNTIME STAGE ====================
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app .
 USER 1000:1000
 EXPOSE 3001
 CMD ["node", "index.js"]
