@@ -1,0 +1,134 @@
+name: DevSecOps CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - ".github/workflows/ci-cd.yaml"
+
+permissions:
+  contents: write
+
+jobs:
+  build-scan-sign-push:
+    name: Build, Scan, SBOM, Sign, Push and Update Manifest
+    runs-on: self-hosted
+
+    env:
+      HARBOR_URL: ${{ secrets.HARBOR_URL }}
+      HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
+      HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify Docker access
+        run: |
+          docker version
+          docker ps
+
+      - name: Login to Harbor
+        run: |
+          echo "$HARBOR_PASSWORD" | docker login "$HARBOR_URL" \
+            -u "$HARBOR_USERNAME" \
+            --password-stdin
+
+      - name: Install Trivy
+        run: |
+          if ! command -v trivy >/dev/null 2>&1; then
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+          fi
+          trivy --version
+
+      - name: Install Syft
+        run: |
+          if ! command -v syft >/dev/null 2>&1; then
+            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
+          fi
+          syft version
+
+      - name: Install Cosign
+        run: |
+          if ! command -v cosign >/dev/null 2>&1; then
+            curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o cosign
+            chmod +x cosign
+            sudo mv cosign /usr/local/bin/cosign
+          fi
+          cosign version
+
+      - name: Restore Cosign private key
+        run: |
+          echo "${{ secrets.COSIGN_PRIVATE_KEY }}" | base64 -d > cosign.key
+          chmod 600 cosign.key
+
+      - name: Build, scan, push, sign and attest images
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          mkdir -p reports/sbom
+
+          for svc in auth backend frontend logger; do
+            IMAGE="$HARBOR_URL/library/mon-$svc:$SHORT_SHA"
+
+            echo "===================================="
+            echo "Processing service: $svc"
+            echo "Image: $IMAGE"
+            echo "===================================="
+
+            echo "1) Build image"
+            docker build -t "$IMAGE" "./app/$svc"
+
+            echo "2) Trivy scan"
+            trivy image --no-progress --exit-code 1 --severity HIGH,CRITICAL "$IMAGE"
+
+            echo "3) Push image to Harbor"
+            docker push "$IMAGE"
+
+            echo "4) Generate SBOM with Syft"
+            syft scan "$IMAGE" -o spdx-json > "reports/sbom/mon-$svc.spdx.json"
+
+            echo "5) Get image digest"
+            DIGEST_REF=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
+            echo "Digest ref: $DIGEST_REF"
+
+            echo "6) Sign image with Cosign"
+            cosign sign --yes \
+              --key cosign.key \
+              --registry-username "$HARBOR_USERNAME" \
+              --registry-password "$HARBOR_PASSWORD" \
+              --allow-insecure-registry \
+              "$DIGEST_REF"
+
+            echo "7) Attach SBOM attestation"
+            cosign attest --yes \
+              --key cosign.key \
+              --predicate "reports/sbom/mon-$svc.spdx.json" \
+              --type spdx \
+              --registry-username "$HARBOR_USERNAME" \
+              --registry-password "$HARBOR_PASSWORD" \
+              --allow-insecure-registry \
+              "$DIGEST_REF"
+
+            echo "Service $svc completed"
+          done
+
+      - name: Update Kubernetes manifest image tags
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+
+          for svc in auth backend frontend logger; do
+            sed -i -E "s|(image: ${HARBOR_URL}/library/mon-${svc}:).*|\1${SHORT_SHA}|" kubernetes/manifests/plateforme.yaml
+          done
+
+          echo "Updated manifest:"
+          grep "image:" kubernetes/manifests/plateforme.yaml
+
+      - name: Commit and push updated manifest
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci-cd: update image tags to ${{ github.sha }}"
+          branch: main
+          file_pattern: kubernetes/manifests/plateforme.yaml
