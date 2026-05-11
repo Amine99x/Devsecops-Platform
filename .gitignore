@@ -1,8 +1,21 @@
+# Secrets
 cosign.key
+*.key
+
+# Generated SBOM / attestations
+*-sbom.json
+*-sbom.spdx.json
+*-attestation.json
+test-cdx.json
+frontend-sbom.json
+frontend-sbom.spdx.json
+frontend-attestation.json
+
+# Generated folders
+security/sbom/
 reports/
-tests/
-soc/
-ci-cd/
-registry/
-docker/
+
+# Temporary files
+*.tmp
 *.log
+cosign.pub
