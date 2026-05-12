@@ -37,26 +37,24 @@ jobs:
             -u "$HARBOR_USERNAME" \
             --password-stdin
 
-      - name: Install Trivy
+      - name: Install tools (Trivy, Syft, Cosign)
         run: |
+          # Trivy
           if ! command -v trivy >/dev/null 2>&1; then
             curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
           fi
           trivy --version
 
-      - name: Install Syft
-        run: |
+          # Syft
           if ! command -v syft >/dev/null 2>&1; then
             curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
           fi
           syft version
 
-      - name: Install Cosign
-        run: |
+          # Cosign
           if ! command -v cosign >/dev/null 2>&1; then
-            curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o cosign
-            chmod +x cosign
-            sudo mv cosign /usr/local/bin/cosign
+            curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
+            chmod +x /usr/local/bin/cosign
           fi
           cosign version
 
@@ -69,39 +67,42 @@ jobs:
       - name: Build, scan, push, sign and attest images
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
-          mkdir -p reports/sbom
+          mkdir -p reports/sbom .trivycache
 
           for svc in auth backend frontend logger; do
             IMAGE="$HARBOR_URL/library/mon-$svc:$SHORT_SHA"
-
             echo "===================================="
-            echo "Processing service: $svc"
+            echo "🚀 Processing service: $svc"
             echo "Image: $IMAGE"
             echo "===================================="
 
+            # 1. Build
             echo "1) Build image"
             docker build -t "$IMAGE" "./app/$svc"
 
-            echo "2) Trivy scan"
-            mkdir -p .trivycache
+            # 2. Trivy (CRITICAL only → pipeline passe)
+            echo "2) Trivy scan (CRITICAL only)"
             trivy image \
-            --cache-dir .trivycache \
-            --no-progress \
-            --exit-code 1 \
-            --severity CRITICAL \
-            "$IMAGE"
+              --cache-dir .trivycache \
+              --no-progress \
+              --exit-code 1 \
+              --severity CRITICAL \
+              "$IMAGE"
 
-            echo "3) Push image to Harbor"
+            # 3. Push
+            echo "3) Push to Harbor"
             docker push "$IMAGE"
 
+            # 4. SBOM
             echo "4) Generate SBOM with Syft"
             syft scan "$IMAGE" -o spdx-json > "reports/sbom/mon-$svc.spdx.json"
 
-            echo "5) Get image digest"
+            # 5. Digest
             DIGEST_REF=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
-            echo "Digest ref: $DIGEST_REF"
+            echo "5) Digest ref: $DIGEST_REF"
 
-            echo "6) Sign image with Cosign"
+            # 6. Sign
+            echo "6) Cosign sign"
             cosign sign --yes \
               --key cosign.key \
               --registry-username "$HARBOR_USERNAME" \
@@ -109,7 +110,8 @@ jobs:
               --allow-insecure-registry \
               "$DIGEST_REF"
 
-            echo "7) Attach SBOM attestation"
+            # 7. Attest SBOM
+            echo "7) Cosign attest SBOM"
             cosign attest --yes \
               --key cosign.key \
               --predicate "reports/sbom/mon-$svc.spdx.json" \
@@ -119,23 +121,23 @@ jobs:
               --allow-insecure-registry \
               "$DIGEST_REF"
 
-            echo "Service $svc completed"
+            echo "✅ Service $svc completed"
           done
 
       - name: Update Kubernetes manifest image tags
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
-
+          echo "🔄 Updating image tags to :$SHORT_SHA"
           for svc in auth backend frontend logger; do
-            sed -i -E "s|(image: ${HARBOR_URL}/library/mon-${svc}:).*|\1${SHORT_SHA}|" kubernetes/manifests/plateforme.yaml
+            sed -i -E "s|(image: ${HARBOR_URL}/library/mon-${svc}:)[^[:space:]]+|\1${SHORT_SHA}|g" \
+              kubernetes/manifests/plateforme.yaml
           done
-
-          echo "Updated manifest:"
-          grep "image:" kubernetes/manifests/plateforme.yaml
+          echo "✅ Updated manifest:"
+          grep -E "image:" kubernetes/manifests/plateforme.yaml || echo "No image lines found"
 
       - name: Commit and push updated manifest
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "ci-cd: update image tags to ${{ github.sha }}"
+          commit_message: "ci-cd: update image tags to ${{ github.sha::7 }}"
           branch: main
           file_pattern: kubernetes/manifests/plateforme.yaml
