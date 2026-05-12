@@ -30,7 +30,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: auth
-          image: 192.168.216.130/library/mon-auth:c4ca24b
+          image: 192.168.216.130/library/mon-auth:1f1b9bc
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
@@ -97,7 +97,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: backend
-          image: 192.168.216.130/library/mon-backend:c4ca24b
+          image: 192.168.216.130/library/mon-backend:1f1b9bc
           imagePullPolicy: IfNotPresent
           env:
             - name: AUTH_URL
@@ -167,7 +167,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: frontend
-          image: 192.168.216.130/library/mon-frontend:c4ca24b
+          image: 192.168.216.130/library/mon-frontend:1f1b9bc
           imagePullPolicy: IfNotPresent
           env:
             - name: BACKEND_URL
@@ -239,7 +239,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: logger
-          image: 192.168.216.130/library/mon-logger:c4ca24b
+          image: 192.168.216.130/library/mon-logger:1f1b9bc
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3010
