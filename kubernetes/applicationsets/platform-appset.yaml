@@ -9,13 +9,10 @@ spec:
       elements:
       - env: dev
         namespace: platform-dev
-        replicas: "1"
       - env: staging
         namespace: platform-staging
-        replicas: "2"
       - env: prod
         namespace: platform-prod
-        replicas: "3"
   template:
     metadata:
       name: 'platform-{{env}}'
