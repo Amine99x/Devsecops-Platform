@@ -9,5 +9,5 @@ patches:
         path: /spec/replicas
         value: 2
     target:
-      kind: Deployment
-      name: .*
+      kind: Rollout
+      name: frontend

@@ -2,7 +2,6 @@ apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
   name: frontend
-  namespace: platform   # will be overridden by overlay
 spec:
   replicas: 3
   selector:
