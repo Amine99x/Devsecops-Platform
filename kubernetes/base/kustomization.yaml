@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: platform
+resources:
+  - plateforme-core.yaml
+  - platform-config.yaml
+  - plateforme.yaml
+  - frontend-rollout.yaml          # ← Rollout maintenant dans le même dossier
+commonLabels:
+  app.kubernetes.io/managed-by: argocd
+
+# Supprime l'ancien Deployment frontend (on utilise le Rollout)
+patches:
+  - patch: |-
+      - op: remove
+        path: /spec/template
+    target:
+      kind: Deployment
+      name: frontend
