@@ -48,7 +48,7 @@ spec:
             failureThreshold: 30
           readinessProbe:
             httpGet:
-              path: /readyz
+              path: /healthz
               port: 3001
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -118,7 +118,7 @@ spec:
             failureThreshold: 30
           readinessProbe:
             httpGet:
-              path: /readyz
+              path: /healthz
               port: 3002
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -188,7 +188,7 @@ spec:
             failureThreshold: 30
           readinessProbe:
             httpGet:
-              path: /readyz
+              path: /healthz
               port: 3005
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -257,7 +257,7 @@ spec:
             failureThreshold: 30
           readinessProbe:
             httpGet:
-              path: /readyz
+              path: /healthz
               port: 3010
             initialDelaySeconds: 5
             periodSeconds: 10
