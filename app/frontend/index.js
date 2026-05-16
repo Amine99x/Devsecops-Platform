@@ -19,7 +19,7 @@ app.get('/readyz', async (_req, res) => {
 
 app.get('/', async (_req, res) => {
   try {
-    const resp = await axios.get(`${BACKEND_URL}/data`, { timeout: 5000 });
+    const resp = await axios.get(`${BACKEND_URL}/data`);
     res.send(`<h1>${resp.data.auth}</h1><h2>${resp.data.secret}</h2>`);
   } catch (err) {
     res.status(503).send(`Backend unavailable: ${err.message}`);
