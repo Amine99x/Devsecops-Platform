@@ -20,6 +20,8 @@ spec:
     metadata:
       labels:
         app: auth
+      annotations:
+        git-commit: "GIT_HASH_PLACEHOLDER"
     spec:
       serviceAccountName: platform-sa
       securityContext:
@@ -87,6 +89,8 @@ spec:
     metadata:
       labels:
         app: backend
+      annotations:
+        git-commit: "GIT_HASH_PLACEHOLDER"
     spec:
       serviceAccountName: platform-sa
       securityContext:
@@ -157,6 +161,8 @@ spec:
     metadata:
       labels:
         app: frontend
+      annotations:
+        git-commit: "GIT_HASH_PLACEHOLDER"
     spec:
       serviceAccountName: platform-sa
       securityContext:
@@ -229,6 +235,8 @@ spec:
     metadata:
       labels:
         app: logger
+      annotations:
+        git-commit: "GIT_HASH_PLACEHOLDER"
     spec:
       serviceAccountName: platform-sa
       securityContext:
