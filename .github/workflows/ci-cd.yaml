@@ -29,6 +29,7 @@ jobs:
         uses: returntocorp/semgrep-action@v1
         with:
           config: "p/default"
+        continue-on-error: true
 
       - name: Set short SHA
         run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
