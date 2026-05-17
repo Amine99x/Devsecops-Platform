@@ -25,7 +25,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ← NEW STEP: This fixes the github.sha::7 error
+      - name: Semgrep SAST Scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: "p/default"
+
       - name: Set short SHA
         run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
@@ -111,7 +115,6 @@ jobs:
               --type spdxjson \
               --registry-username "$HARBOR_USERNAME" \
               --registry-password "$HARBOR_PASSWORD" \
-              --allow-insecure-registry \
               "$DIGEST_REF"
             echo "✅ Service $svc completed"
           done

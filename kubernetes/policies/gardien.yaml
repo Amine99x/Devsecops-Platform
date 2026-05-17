@@ -4,26 +4,31 @@ metadata:
   name: verify-harbor-signatures
 spec:
   background: false
+
   validationFailureAction: Enforce
   webhookTimeoutSeconds: 30
+
   rules:
     - name: verify-signed-images
+
       match:
         any:
           - resources:
               kinds:
                 - Pod
+
       verifyImages:
         - imageReferences:
             - "192.168.216.130/library/*"
-          failureAction: Enforce
+
           required: true
+
           attestors:
             - count: 1
               entries:
                 - keys:
                     publicKeys: |-
                       -----BEGIN PUBLIC KEY-----
-                      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2GqaI8RR43JhNnyGq+DT+926AsNn Nro3jmpMQENTbftFBAM8ct+cXZCHFKRjEIwfCDQAAM9YMyQXOClMMrsfVA==
-
+                      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2GqaI8RR43JhNnyGq+DT+926AsNn
+                      Nro3jmpMQENTbftFBAM8ct+cXZCHFKRjEIwfCDQAAM9YMyQXOClMMrsfVA==
                       -----END PUBLIC KEY-----

@@ -1,0 +1,28 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+
+metadata:
+  name: require-gitops-annotation
+
+spec:
+  validationFailureAction: Enforce
+  background: true
+
+  rules:
+  - name: check-git-commit
+
+    match:
+      any:
+      - resources:
+          kinds:
+          - Deployment
+          namespaces:
+          - platform
+
+    validate:
+      message: "L'annotation git-commit est obligatoire pour les déploiements GitOps"
+
+      pattern:
+        metadata:
+          annotations:
+            git-commit: "?*"

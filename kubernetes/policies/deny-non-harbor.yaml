@@ -1,0 +1,22 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: deny-non-harbor-images
+spec:
+  validationFailureAction: Enforce
+  background: true
+
+  rules:
+    - name: check-harbor-only
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+
+      validate:
+        message: "Only Harbor images (192.168.216.130) are allowed."
+        pattern:
+          spec:
+            containers:
+              - image: "192.168.216.130/*"

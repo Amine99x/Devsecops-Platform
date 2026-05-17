@@ -1,23 +1,18 @@
+# Ignore runner and dependencies
+actions-runner/
+node_modules/
+
 # Secrets
 cosign.key
 *.key
-
-# Generated SBOM / attestations
-*-sbom.json
-*-sbom.spdx.json
-*-attestation.json
-test-cdx.json
-frontend-sbom.json
-frontend-sbom.spdx.json
-frontend-attestation.json
-
-# Generated folders
-security/sbom/
-reports/
-
-# Temporary files
-*.tmp
-*.log
 cosign.pub
-cosign.key.b64
-actions-runner/
+*.b64
+
+# Generated files & logs
+reports/
+security/
+*.spdx.json
+*.json
+!package.json
+*.log
+*.tmp
